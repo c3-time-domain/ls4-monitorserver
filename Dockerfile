@@ -21,22 +21,22 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 # apt-getting pip installs a full dev environment, which we don't
 #   want in our final image.  (400 unnecessary MB.)
 
-# FROM base AS build
+FROM base AS build
 #
-# RUN apt-get update && apt-get install -y python3-pip
+RUN apt-get update && apt-get install -y python3-pip
 #
-# RUN mkdir /venv
-# RUN python3 -mvenv /venv
+RUN mkdir /venv
+RUN python3 -mvenv /venv
 #
-# RUN source /venv/bin/activate \
-#   && pip install web.py
+RUN source /venv/bin/activate \
+  && pip install web.py
 
 # ======================================================================
 
 FROM base AS final
 
-# COPY --from=build /venv/ /venv/
-# ENV PATH=/venv/bin:$PATH
+COPY --from=build /venv/ /venv/
+ENV PATH=/venv/bin:$PATH
 
 # These need to get replaced with a bind mound at runtime
 RUN mkdir /secrets
@@ -51,7 +51,7 @@ RUN ln -s ../mods-available/rewrite.load /etc/apache2/mods-enabled/rewrite.load
 RUN rm /etc/apache2/sites-enabled/000-default.conf
 RUN echo "Listen 8080" > /etc/apache2/ports.conf
 COPY monitorserver.conf /etc/apache2/sites-available/
-RUN ln -s ../sites-available/connector.conf /etc/apache2/sites-enabled/connector.conf
+RUN ln -s ../sites-available/monitorserver.conf /etc/apache2/sites-enabled/monitorserver.conf
 
 # Patches
 RUN mkdir patches

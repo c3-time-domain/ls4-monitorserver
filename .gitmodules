@@ -1,0 +1,3 @@
+[submodule "nersc-upload-connector"]
+	path = nersc-upload-connector
+	url = git@github.com:c3-time-domain/nersc-upload-connector.git
