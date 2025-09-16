@@ -8,7 +8,7 @@ SHELL ["/bin/bash", "-c"]
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get upgrade -y \
-    && apt-get install -y less python3 python3-venv apache2 libapache2-mod-wsgi-py3 libapache2-mod-php php-fpm \
+    && apt-get install -y less python3 python3-venv apache2 libapache2-mod-wsgi-py3 libapache2-mod-php \
        libcap2-bin net-tools netcat-openbsd lynx patch tmux \
     && apt-get -y autoremove \
     && apt-get clean \
@@ -22,12 +22,12 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 #   want in our final image.  (400 unnecessary MB.)
 
 FROM base AS build
-#
+
 RUN apt-get update && apt-get install -y python3-pip
-#
+
 RUN mkdir /venv
 RUN python3 -mvenv /venv
-#
+
 RUN source /venv/bin/activate \
   && pip install web.py
 
@@ -37,10 +37,6 @@ FROM base AS final
 
 COPY --from=build /venv/ /venv/
 ENV PATH=/venv/bin:$PATH
-
-# These need to get replaced with a bind mound at runtime
-RUN mkdir /secrets
-RUN mkdir /dest
 
 RUN /sbin/setcap 'cap_net_bind_service=+ep' /usr/sbin/apache2
 
@@ -69,7 +65,17 @@ RUN chmod a+rwx /var/lock/apache2
 RUN chmod -R a+rx /etc/ssl/private
 RUN mkdir -p /var/log/apache2
 RUN chmod -R a+rwx /var/log/apache2
+
+# /secrets, /dest, and /var/www/html need to get replaced with bind mounts at runtime
+RUN mkdir /secrets
+RUN mkdir /dest
+RUN mkdir /var/www/html
+RUN mkdir /var/www/xfer
+COPY nersc-upload-connector/connector.py /var/www/xfer/connector.py
+RUN chown $UID:$GID /secrets
 RUN chown $UID:$GID /dest
+RUN chown -R $UID:$GID /var/www/html
+RUN chown -R $UID:$GID /var/www/xfer
 
 USER $UID:$GID
 RUN apachectl start
